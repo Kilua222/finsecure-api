@@ -2,11 +2,12 @@
 Pydantic схемы для всех структур данных из задания.
 Таблицы 1-9 из технического задания.
 """
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, List, Any
+from __future__ import annotations
+from typing import Optional, List
 from datetime import datetime
 from uuid import UUID, uuid4
-from enum import Enum
+from pydantic import BaseModel, Field, ConfigDict
+
 from app.models.enums import TransactionType, InfoMessageType, BranchCode, ObligationType
 
 
@@ -26,12 +27,14 @@ class Tax(BaseModel):
 # =============================================================================
 class Obligation(BaseModel):
     """Обязательство (Таблица 4.1)"""
-    Type: ObligationType = Field(..., description="Вид обязательства: 1, 2, 3 или 4")
+    obligation_type: ObligationType = Field(..., alias="Type", description="Вид обязательства: 1, 2, 3 или 4")
     StartDate: Optional[datetime] = Field(None, description="Дата периода 'с' (для Type=1)")
     EndDate: Optional[datetime] = Field(None, description="Дата периода 'по' (для Type=1)")
     ActDate: Optional[datetime] = Field(None, description="Дата акта проверки")
     ActNumber: Optional[str] = Field(None, description="Номер акта проверки")
     Taxs: List[Tax] = Field(default_factory=list, description="Массив обязательств по налогам")
+
+    model_config = ConfigDict(populate_by_name=True)  # Позволяет использовать alias
 
 
 # =============================================================================
@@ -96,20 +99,17 @@ class Receipt(BaseModel):
 # Таблица 3. Информационное сообщение (Message)
 # =============================================================================
 class Message(BaseModel):
-    """
-    Информационное сообщение (Таблица 3).
-    Содержится в поле Data транзакции (для TransactionType = 9).
-    """
-    Data: str = Field(..., description="Base64 закодированный JSON пакет данных (одна из таблиц 4-9)")
-    SenderBranch: BranchCode = Field(..., description="Код отправителя: SYSTEM_A или SYSTEM_B")
-    ReceiverBranch: BranchCode = Field(..., description="Код получателя: SYSTEM_A или SYSTEM_B")
-    InfoMessageType: InfoMessageType = Field(..., description="Тип информационного сообщения")
-    MessageTime: datetime = Field(default_factory=datetime.utcnow, description="Дата создания сообщения в UTC")
-    ChainGuid: UUID = Field(default_factory=uuid4, description="Уникальный идентификатор цепочки сообщений")
-    PreviousTransactionHash: Optional[str] = Field(None, description="Хэш транзакции с предыдущим сообщением")
+    """Информационное сообщение (Таблица 3)"""
+    Data: str = Field(..., description="Base64 закодированный JSON пакет данных")
+    SenderBranch: BranchCode = Field(..., description="Код отправителя")
+    ReceiverBranch: BranchCode = Field(..., description="Код получателя")
+    message_type: InfoMessageType = Field(..., alias="InfoMessageType", description="Тип информационного сообщения")
+    MessageTime: datetime = Field(default_factory=datetime.utcnow, description="Дата создания сообщения")
+    ChainGuid: UUID = Field(default_factory=uuid4, description="ID цепочки сообщений")
+    PreviousTransactionHash: Optional[str] = Field(None, description="Хэш предыдущей транзакции")
     Metadata: Optional[str] = Field(None, description="Метаданные для поиска")
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(populate_by_name=True)  # Позволяет использовать как alias, так и имя поля
 
 
 # =============================================================================
@@ -120,7 +120,8 @@ class Transaction(BaseModel):
     Транзакция (Таблица 2).
     Единица хранения в реестре.
     """
-    TransactionType: TransactionType = Field(..., description="Тип транзакции: 9 или 18")
+    # ✅ ИСПРАВЛЕНО: используем псевдоним для поля
+    transaction_type: TransactionType = Field(..., alias="TransactionType", description="Тип транзакции: 9 или 18")
     Data: str = Field(..., description="Base64 закодированный JSON пакет данных (Message)")
     Hash: Optional[str] = Field(None, description="Хэш транзакции")
     Sign: Optional[str] = Field(None, description="ЭЦП автора транзакции (в Base64)")
@@ -130,7 +131,7 @@ class Transaction(BaseModel):
     TransactionIn: Optional[str] = Field(None, description="Предыдущая транзакция")
     TransactionOut: Optional[str] = Field(None, description="Следующая транзакция")
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)  # Добавили populate_by_name
 
 
 # =============================================================================
@@ -170,3 +171,15 @@ class SignedApiData(BaseModel):
 # Union тип для всех возможных сообщений (для удобства)
 # =============================================================================
 MessageContent = BankGuarantee | GuaranteeAcceptance | GuaranteeRejection | Receipt
+
+
+# =============================================================================
+# Перестраиваем модели для разрешения циклических ссылок
+# =============================================================================
+# Раскомментируйте эти строки, если после всех исправлений всё ещё есть ошибки
+# BankGuarantee.model_rebuild()
+# GuaranteeAcceptance.model_rebuild()
+# GuaranteeRejection.model_rebuild()
+# Receipt.model_rebuild()
+# Message.model_rebuild()
+# Transaction.model_rebuild()
