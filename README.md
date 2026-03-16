@@ -20,7 +20,23 @@
 
 ---
 
-# 🚀 Установка и запуск
+## 🌐 Демо
+
+Проект развернут и доступен по ссылке:
+
+https://finsecure-api-1.onrender.com
+
+Документация Swagger:
+
+https://finsecure-api-1.onrender.com/docs
+
+Health Check:
+
+https://finsecure-api-1.onrender.com/api/health
+
+---
+
+# 🚀 Установка и запуск (локально)
 
 ## 1. Клонировать репозиторий
 
@@ -37,27 +53,23 @@ python -m venv venv
 
 ### Активация
 
-**Windows**
+Windows
 
 ```bash
 venv\Scripts\activate
 ```
 
-**Linux / macOS**
+Linux / macOS
 
 ```bash
 source venv/bin/activate
 ```
-
----
 
 ## 3. Установить зависимости
 
 ```bash
 pip install -r requirements.txt
 ```
-
----
 
 ## 4. Запустить сервер
 
@@ -83,52 +95,55 @@ http://localhost:8000/docs
 
 ## Проверка API
 
-### GET /api/health
+GET /api/health
 
 ```bash
-curl -X GET "http://localhost:8000/api/health"
+curl -X GET "https://finsecure-api-1.onrender.com/api/health"
 ```
 
 ---
 
-## Отправка исходящего сообщения
+## Получение входящих сообщений (Outgoing)
 
-### POST /api/messages/outgoing
+POST /api/messages/outgoing
 
 ```bash
-curl -X POST "http://localhost:8000/api/messages/outgoing" \
--H "Content-Type: application/json" \
--d '{
-  "Data": "eyJTdGFydERhdGUiOiAiMjAyNC0wMS0wMVQwMDowMDowMFoiLCAiRW5kRGF0ZSI6ICIyMDI0LTEyLTMxVDIzOjU5OjU5WiIsICJMaW1pdCI6IDEwLCAiT2Zmc2V0IjogMH0=",
-  "Sign": "test_sign",
-  "SignerCert": "test_cert"
-}'
+curl -X POST "https://finsecure-api-1.onrender.com/api/messages/outgoing" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "Data": "eyJTdGFydERhdGUiOiAiMjAyNi0wMS0wMVQwMDowMDowMFoiLCAiRW5kRGF0ZSI6ICIyMDI2LTEyLTMxVDIzOjU5OjU5WiIsICJMaW1pdCI6IDEwLCAiT2Zmc2V0IjogMH0=",
+    "Sign": "test_signature",
+    "SignerCert": "test_cert"
+  }'
+```
+
+Пояснение:  
+Этот запрос ищет сообщения за **2026 год** (именно тогда создана тестовая транзакция).
+
+---
+
+## Отправка сообщения в реестр (Incoming)
+
+POST /api/messages/incoming
+
+```bash
+curl -X POST "https://finsecure-api-1.onrender.com/api/messages/incoming" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "Data": "eyJUcmFuc2FjdGlvbnMiOltdLCJDb3VudCI6MH0=",
+    "Sign": "test_signature",
+    "SignerCert": "test_cert"
+  }'
 ```
 
 ---
 
-## Получение входящего сообщения
+## Отладка — все транзакции
 
-### POST /api/messages/incoming
-
-```bash
-curl -X POST "http://localhost:8000/api/messages/incoming" \
--H "Content-Type: application/json" \
--d '{
-  "Data": "eyJUcmFuc2FjdGlvbnMiOiBbXSwgIkNvdW50IjogMH0=",
-  "Sign": "test_sign",
-  "SignerCert": "test_cert"
-}'
-```
-
----
-
-## Debug endpoint
-
-### GET /api/messages/debug
+GET /api/messages/debug
 
 ```bash
-curl -X GET "http://localhost:8000/api/messages/debug"
+curl -X GET "https://finsecure-api-1.onrender.com/api/messages/debug"
 ```
 
 ---
@@ -137,32 +152,25 @@ curl -X GET "http://localhost:8000/api/messages/debug"
 
 ```
 finsecure-api/
-
-app/
- ├── api/endpoints/
- │   ├── health.py
- │   └── messages.py
- │
- ├── core/
- │   ├── hashing.py
- │   ├── base64_utils.py
- │   └── storage.py
- │
- ├── models/
- │   ├── enums.py
- │   └── schemas.py
- │
- ├── services/
- │   └── transaction_service.py
- │
- └── main.py
-
-tests/
- ├── test_hashing.py
- └── test_storage.py
-
-requirements.txt
-README.md
+├── app/
+│   ├── api/endpoints/
+│   │   ├── health.py
+│   │   └── messages.py
+│   ├── core/
+│   │   ├── hashing.py
+│   │   ├── base64_utils.py
+│   │   └── storage.py
+│   ├── models/
+│   │   ├── enums.py
+│   │   └── schemas.py
+│   ├── services/
+│   │   └── transaction_service.py
+│   └── main.py
+├── tests/
+│   ├── test_hashing.py
+│   └── test_storage.py
+├── requirements.txt
+└── README.md
 ```
 
 ---
@@ -174,5 +182,3 @@ README.md
 ```bash
 pytest
 ```
-
----
